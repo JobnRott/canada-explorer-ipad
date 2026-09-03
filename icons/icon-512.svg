@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="38" fill="#123c6b"/>
-  <rect x="22" y="28" width="148" height="136" rx="22" fill="#fff"/>
-  <path d="M96 43l9 22 24-6-10 22 22 12-25 5 4 25-24-13-24 13 4-25-25-5 22-12-10-22 24 6z" fill="#e74b4b"/>
-  <text x="96" y="148" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="800" fill="#123c6b">CANADA</text>
-</svg>
