@@ -655,21 +655,37 @@ let sharedCanadaLessonVoice=null;
 function getCanadaLessonVoice(){
  if(sharedCanadaLessonVoice)return sharedCanadaLessonVoice;
  const voices=window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
- const naturalNames=/samantha|ava|karen|serena|tessa|susan|zira|jenny|aria|moira|fiona|siri|enhanced|premium/i;
- const english=voices.filter(v=>/^en(-|$)/i.test(v.lang));
- const scoreVoice=v=>{
-   let score=0, name=String(v.name||'');
-   if(/enhanced|premium/i.test(name))score+=220;
-   if(/en-CA/i.test(v.lang))score+=120;
-   if(naturalNames.test(name))score+=70;
+ // Prefer a genuine Australian English female voice. On Apple devices this is
+ // normally Karen (en-AU); on Windows 11 it may be Natasha/another en-AU voice.
+ const australian=voices.filter(v=>/^en-AU$/i.test(String(v.lang||'')));
+ const scoreAustralian=v=>{
+   let score=0, name=String(v.name||''), uri=String(v.voiceURI||'');
+   if(/karen/i.test(name)||/Karen/i.test(uri))score+=1200;
+   if(/natasha|libby/i.test(name))score+=1050;
+   if(/female|woman/i.test(name))score+=100;
+   if(/natural|neural|premium|enhanced/i.test(name))score+=80;
    if(v.localService)score+=30;
-   if(/en-US/i.test(v.lang))score+=25;
-   if(/en-GB/i.test(v.lang))score+=20;
-   if(/en-AU/i.test(v.lang))score+=5;
-   if(/google/i.test(name))score-=20;
+   if(/william|alex|daniel|male/i.test(name))score-=300;
    return score;
  };
- sharedCanadaLessonVoice=english.slice().sort((a,b)=>scoreVoice(b)-scoreVoice(a))[0]||null;
+ if(australian.length){
+   sharedCanadaLessonVoice=australian.slice().sort((a,b)=>scoreAustralian(b)-scoreAustralian(a))[0];
+   return sharedCanadaLessonVoice;
+ }
+ // If an en-AU voice is temporarily not exposed by the browser, keep the
+ // requested Australian locale rather than choosing a Canadian/US voice.
+ const english=voices.filter(v=>/^en(-|$)/i.test(String(v.lang||'')));
+ const fallbackFemale=/samantha|ava|serena|susan|zira|jenny|aria|moira|fiona|tessa/i;
+ sharedCanadaLessonVoice=english.slice().sort((a,b)=>{
+   const score=v=>{
+     let n=String(v.name||''),s=0;
+     if(fallbackFemale.test(n))s+=100;
+     if(/natural|neural|premium|enhanced/i.test(n))s+=50;
+     if(v.localService)s+=20;
+     return s;
+   };
+   return score(b)-score(a);
+ })[0]||null;
  return sharedCanadaLessonVoice;
 }
 function prepareSpeechText(text){
@@ -1141,14 +1157,14 @@ function buildRegionScenes(name){
  const fullFrameRegions=new Set(["Manitoba","Ontario","Quebec","New Brunswick","Nova Scotia","Prince Edward Island","Newfoundland and Labrador","Yukon","Northwest Territories","Nunavut"]);
  const fullFrameVideos={
   "Manitoba":{scene:0,commons:"Windy field in Manitoba.webm",alt:"Windy field in Manitoba",credit:"Windy field in Brandon, Manitoba — Joanna Poe, Wikimedia Commons"},
-  "Ontario":{scene:1,commons:"Behind Niagara Falls in Spring 2026.webm",alt:"Behind Niagara Falls in spring",credit:"Behind Niagara Falls in Spring 2026 — Gogerr, CC BY-SA 4.0, Wikimedia Commons"},
+  "Ontario":{scene:1,commons:"Niagara Falls August, 2017 video 2.webm",alt:"Niagara Falls in Ontario",credit:"Niagara Falls August 2017 — Visem, CC BY-SA 3.0, Wikimedia Commons"},
   "Quebec":{scene:2,commons:"20160905 - 03 - Montreal (Hochelaga-Maisonneuve).webm",alt:"Montreal neighbourhood and city scene",credit:"Montreal, Hochelaga-Maisonneuve — Wikimedia Commons"},
   "New Brunswick":{scene:3,commons:"Northern gannets (Sula bassana) behind a boat.webm",alt:"Northern gannets over Chaleur Bay",credit:"Northern gannets in Chaleur Bay, New Brunswick — Wikimedia Commons"},
   "Prince Edward Island":{scene:0,commons:"1992 Charlottetown Double Decker Bus Tour.webm",alt:"Charlottetown tour footage",credit:"Charlottetown Double Decker Bus Tour — patmartel100, CC BY 3.0, Wikimedia Commons"},
   "Nova Scotia":{scene:7,commons:"Halifax Explosion, W.G. MacLaughlan, 1917-1920, Scene 01.webm",alt:"Historic Halifax footage from the early twentieth century",credit:"Historic Halifax footage, Halifax Explosion film — public domain, Wikimedia Commons"},
-  "Newfoundland and Labrador":{scene:1,commons:"Bishop's Falls dam and power station.webm",alt:"Bishop's Falls dam and power station in Newfoundland",credit:"Bishop's Falls dam and power station — Quincylvania, CC0, Wikimedia Commons"},
+  "Newfoundland and Labrador":{scene:1,commons:"Undular Bores Develop Near Newfoundland Island (CIRA 2024-07-10 - nolabels).webm",alt:"Weather system near Newfoundland Island",credit:"Undular Bores near Newfoundland Island — CSU/CIRA & NOAA, Wikimedia Commons"},
   "Yukon":{scene:3,commons:"American bison (Bison bison) in Yukon, Canada.webm",alt:"American bison in Yukon",credit:"American bison in Yukon — brigachtal, CC0, Wikimedia Commons"},
-  "Northwest Territories":{scene:1,commons:"Shifting Ice in the Beaufort Sea (CIRA 2026-04-14 - nolabels).webm",alt:"Shifting sea ice near the Northwest Territories",credit:"Shifting Ice in the Beaufort Sea — CSU/CIRA & NOAA/NESDIS, public domain"},
+  "Northwest Territories":{scene:1,url:"https://satlib.cira.colostate.edu/wp-content/uploads/sites/23/2026/04/202604081142-202604141450_n20_n21_npp_viirs_dnb_shifting-ice-north-of-Canada_nolabels.mp4",alt:"Shifting sea ice near the Northwest Territories",credit:"Shifting Ice in the Beaufort Sea — CSU/CIRA & NOAA/NESDIS, public domain"},
   "Nunavut":{scene:1,commons:"Nunavut Arctic College Environmental Technology Program An Adventure in Learning.webm",alt:"Nunavut Arctic College environmental learning footage",credit:"Nunavut Arctic College Environmental Technology Program — National Centre for Collaboration in Indigenous Education, Wikimedia Commons"}
  };
  const regionTopicMediaPools={
@@ -1184,9 +1200,17 @@ function renderRegionScene(speakNow=true){
  if((currentRegion==="Alberta"||currentRegion==="Saskatchewan"||scene.mediaSequence)&&scene.mediaSequence&&scene.mediaSequence.length){
   let remaining=regionVisualElapsed, chosen=scene.mediaSequence[0];
   for(const item of scene.mediaSequence){ if(remaining < (item.duration||7)){ chosen=item; break; } remaining-=(item.duration||7); chosen=item; }
-  const src=chosen.commons?`https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(chosen.commons)}?width=1600`:chosen.url;
+  const src=chosen.commons?`https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(chosen.commons)}?width=1600`:chosen.url;
   const mediaClass=currentRegion==="Alberta"?'alberta-fullframe-photo':(currentRegion==="Saskatchewan"?'saskatchewan-fullframe-media':'region-fullframe-media');
-  if(chosen.type==="video"){ const vid=document.createElement("video");vid.className=mediaClass;vid.src=src;vid.autoplay=true;vid.muted=true;vid.playsInline=true;vid.loop=true;vid.controls=false;vid.dataset.photoName=chosen.commons||chosen.url||"";vid.setAttribute('aria-label',chosen.alt||scene.title);vid.addEventListener('error',()=>{stage.innerHTML='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:24px;padding:30px;text-align:center;background:#173b68">Image unavailable — continuing with the lesson.</div>';});stage.appendChild(vid);vid.play().catch(()=>{}); } else { const img=document.createElement("img");img.className=mediaClass;img.src=src;img.alt=chosen.alt||scene.title;img.loading="eager";img.decoding="async";img.dataset.photoName=chosen.commons||chosen.url||"";img.addEventListener("error",()=>{stage.innerHTML='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:24px;padding:30px;text-align:center;background:#173b68">Photo unavailable — continuing with the lesson.</div>';});stage.appendChild(img);}
+  const mediaKey=chosen.commons||chosen.url||"";
+  const fallbackIndex=scene.mediaSequence.findIndex(x=>(x.commons||x.url||"")===mediaKey);
+  const showNextWorkingMedia=(failedKey)=>{
+    const candidates=scene.mediaSequence.filter(x=>(x.commons||x.url||"")!==failedKey);
+    const next=candidates.find(x=>!(window.__ceBadMedia||new Set()).has(x.commons||x.url||""));
+    if(next){ const idx=scene.mediaSequence.indexOf(next); const elapsedBefore=scene.mediaSequence.slice(0,idx).reduce((a,x)=>a+(x.duration||8),0); if(regionVisualElapsed<elapsedBefore+(next.duration||8)){ renderRegionScene(false); return; } }
+    const fallback=document.createElement("img");fallback.className=mediaClass;fallback.src="assets/canada_map.png";fallback.alt="Canada map fallback visual";fallback.loading="eager";stage.innerHTML="";stage.appendChild(fallback);
+  };
+  if(chosen.type==="video"){ const vid=document.createElement("video");vid.className=mediaClass;vid.src=src;vid.autoplay=true;vid.muted=true;vid.playsInline=true;vid.loop=true;vid.controls=false;vid.preload="auto";const poster=scene.mediaSequence.find(x=>x.type!=="video");if(poster&&poster.commons)vid.poster=`https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(poster.commons)}?width=1600`;vid.dataset.photoName=mediaKey;vid.setAttribute('aria-label',chosen.alt||scene.title);vid.addEventListener('error',()=>{window.__ceBadMedia=window.__ceBadMedia||new Set();window.__ceBadMedia.add(mediaKey);const photo=scene.mediaSequence.find(x=>x.type!=="video"&&!(window.__ceBadMedia||new Set()).has(x.commons||x.url||""));if(photo){const replacement=Object.assign({},photo);const replacementSrc=`https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(replacement.commons)}?width=1600`;const img=document.createElement("img");img.className=mediaClass;img.src=replacementSrc;img.alt=replacement.alt||scene.title;img.loading="eager";img.decoding="async";img.addEventListener("error",()=>{window.__ceBadMedia.add(replacement.commons);showNextWorkingMedia(replacement.commons);},{once:true});stage.innerHTML="";stage.appendChild(img);}else showNextWorkingMedia(mediaKey);},{once:true});stage.appendChild(vid);vid.play().catch(()=>{}); } else { const img=document.createElement("img");img.className=mediaClass;img.src=src;img.alt=chosen.alt||scene.title;img.loading="eager";img.decoding="async";img.dataset.photoName=mediaKey;img.addEventListener("error",()=>{window.__ceBadMedia=window.__ceBadMedia||new Set();window.__ceBadMedia.add(mediaKey);showNextWorkingMedia(mediaKey);},{once:true});stage.appendChild(img);}
  } else {
   const card=document.createElement("div");card.className="region-fact-card";let mediaHtml="";if(scene.media){const src=scene.media.commons?`https://commons.wikimedia.org/wiki/Special:Redirect/file/${encodeURIComponent(scene.media.commons)}?width=1200`:scene.media.url;mediaHtml=`<div class="region-media"><img src="${src}" alt="${(scene.media.alt||scene.title).replace(/"/g,'&quot;')}" loading="eager"><div class="region-media-credit">${scene.media.credit||""}</div></div>`;}card.innerHTML=`<div class="region-icon">${scene.icon}</div><h3>${scene.title}</h3>${mediaHtml}<p>${scene.caption}</p><div class="region-visual-note">Listen, look, and take your time.</div>`;stage.appendChild(card);const img=card.querySelector("img");if(img){img.addEventListener("error",()=>{const wrap=img.parentElement;wrap.innerHTML='<div class="region-media-fallback">Photo unavailable — continuing with the lesson.</div>';});}
  }

@@ -1,4 +1,4 @@
-const CACHE = 'canada-explorer-shell-v1';
+const CACHE = 'canada-explorer-shell-v3';
 const CORE = [
   './',
   './index.html',
